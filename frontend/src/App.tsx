@@ -1,7 +1,7 @@
 function App() {
   return (
     <>
-      <h1>Branubrain</h1>
+      <h1>Branubrain2</h1>
     </>
   )
 }
