@@ -17,7 +17,7 @@ variable "cloud_run_service_name" {
 variable "cloud_run_image_url" {
   description = "Container image URL"
   type        = string
-  default     = ""
+  default     = "asia-northeast1-docker.pkg.dev/branubrain-fs/branubrain-fs-dev/backend-dev"
 }
 
 variable "cloud_run_container_port" {
