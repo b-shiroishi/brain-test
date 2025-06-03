@@ -23,7 +23,6 @@ env:
 jobs:
   deploy-prod:
     if: github.ref == 'refs/heads/main'
-    needs: test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -77,7 +76,6 @@ jobs:
 
   deploy-stg:
     if: github.ref == 'refs/heads/stg'
-    needs: test
     runs-on: ubuntu-latest
     defaults:
       run:
