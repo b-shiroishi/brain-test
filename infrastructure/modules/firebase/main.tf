@@ -12,6 +12,8 @@ resource "google_project_service" "firebase_apis" {
   
   project = data.google_project.main.project_id
   service = each.value
+
+  disable_on_destroy = false
 }
 
 # Firebase プロジェクト有効化

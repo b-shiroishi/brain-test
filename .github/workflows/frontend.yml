@@ -1,13 +1,24 @@
-name: Frontend CI
+name: Frontend CI/CD
+
 on:
   push:
     paths:
       - 'frontend/**'
     branches:
-      - main
+      - dev 
+  
+  pull_request:
+    paths:
+      - 'frontend/**'
+    branches:
+      - main 
+      - stg  
+    types:
+      - closed
 
 jobs:
-  build_and_deploy:
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,11 +31,61 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.PRODUCTION_API_URL }}
+          VITE_BACKEND_API_URL: ${{ secrets.PRODUCTION_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BRAIN_TEST_APP_A10FA }}'
           channelId: live
-          projectId: branubrain-fs   
-          siteId: branubrain-fs-dev
+          projectId: branubrain-fs
+          target: prod
+
+  deploy-stg:
+    if: github.ref == 'refs/heads/stg'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BACKEND_API_URL: ${{ secrets.STAGING_API_URL }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BRAIN_TEST_APP_A10FA }}'
+          channelId: live
+          projectId: branubrain-fs
+          target: stg
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BACKEND_API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BRAIN_TEST_APP_A10FA }}'
+          channelId: live
+          projectId: branubrain-fs
+          target: dev
