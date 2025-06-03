@@ -23,6 +23,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
+      - run: |
+          rm -rf dist/
+          rm -rf node_modules/.vite/
+          rm -rf node_modules/.cache/
       - run: npm ci
       - run: npm run build
         env:
@@ -49,6 +53,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
+      - run: |
+          rm -rf dist/
+          rm -rf node_modules/.vite/
+          rm -rf node_modules/.cache/
       - run: npm ci
       - run: npm run build
         env:
@@ -75,6 +83,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
+      - run: |
+          rm -rf dist/
+          rm -rf node_modules/.vite/
+          rm -rf node_modules/.cache/
       - run: npm ci
       - run: npm run build
         env:
