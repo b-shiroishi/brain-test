@@ -86,3 +86,4 @@ jobs:
           channelId: live
           projectId: branubrain-fs
           target: dev
+          entryPoint: .
