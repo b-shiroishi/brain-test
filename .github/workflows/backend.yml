@@ -1,0 +1,183 @@
+name: Backend CI/CD
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+    branches:
+      - dev 
+  
+  pull_request:
+    paths:
+      - 'backend/**'
+    branches:
+      - main 
+      - stg  
+    types:
+      - closed
+
+env:
+  PROJECT_ID: branubrain-fs
+  REGION: asia-northeast1
+
+jobs:
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
+        run: |
+          gcloud auth configure-docker $REGION-docker.pkg.dev
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-prod/backend-prod:$GITHUB_SHA
+          
+          docker build -t $IMAGE_TAG .
+          
+          docker push $IMAGE_TAG
+          
+          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-prod/backend-prod:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-prod/backend-prod:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy branubrain-fs-prod \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-prod/backend-prod:$GITHUB_SHA \
+            --platform managed \
+            --region $REGION \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --set-env-vars "ENVIRONMENT=production" \
+            --timeout 300
+
+  deploy-stg:
+    if: github.ref == 'refs/heads/stg'
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
+        run: |
+          gcloud auth configure-docker $REGION-docker.pkg.dev
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-stg/backend-stg:$GITHUB_SHA
+          
+          docker build -t $IMAGE_TAG .
+          
+          docker push $IMAGE_TAG
+          
+          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-stg/backend-stg:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-stg/backend-stg:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy branubrain-fs-stg \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-stg/backend-stg:$GITHUB_SHA \
+            --platform managed \
+            --region $REGION \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 5 \
+            --set-env-vars "ENVIRONMENT=staging" \
+            --timeout 300
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
+        run: |
+          gcloud auth configure-docker $REGION-docker.pkg.dev
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-dev/backend-dev:$GITHUB_SHA
+          
+          docker build -t $IMAGE_TAG .
+          
+          docker push $IMAGE_TAG
+          
+          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-dev/backend-dev:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-dev/backend-dev:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy branubrain-fs-dev \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/branubrain-fs-dev/backend-dev:$GITHUB_SHA \
+            --platform managed \
+            --region $REGION \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 512Mi \
+            --cpu 0.5 \
+            --min-instances 0 \
+            --max-instances 3 \
+            --set-env-vars "ENVIRONMENT=development" \
+            --timeout 300
