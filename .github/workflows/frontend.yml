@@ -1,22 +1,15 @@
 name: Frontend CI/CD
-
 on:
   push:
     paths:
       - 'frontend/**'
     branches:
-      - dev 
-  
-  pull_request:
-    paths:
-      - 'frontend/**'
-    branches:
-      - main 
-      - stg  
-    types:
-      - closed
+      - main
+      - dev
+      - stg
 
 jobs:
+  # 本番環境
   deploy-prod:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -28,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
       - run: npm ci
       - run: npm run build
         env:
@@ -40,6 +35,7 @@ jobs:
           projectId: branubrain-fs
           target: prod
 
+  # ステージング環境
   deploy-stg:
     if: github.ref == 'refs/heads/stg'
     runs-on: ubuntu-latest
@@ -56,7 +52,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_BACKEND_API_URL: ${{ secrets.STAGING_API_URL }}
+          VITE_API_BASE_URL: ${{ secrets.STAGING_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -65,6 +61,7 @@ jobs:
           projectId: branubrain-fs
           target: stg
 
+  # 開発環境
   deploy-dev:
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
@@ -81,7 +78,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_BACKEND_API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+          VITE_API_BASE_URL: ${{ secrets.DEVELOPMENT_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
