@@ -4,7 +4,7 @@ function App() {
   const [message, setMessage] = useState('')
 
   const handleApiCall = async () => {
-    const apiUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8000';
+    const apiUrl = 'https://branubrain-fs-dev-115966255603.asia-northeast1.run.app';
     const res = await fetch(`${apiUrl}/health`);
     const data = await res.json();
     setMessage(data.status);
