@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_BACKEND_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          VITE_BACKEND_API_URL: ${{ secrets.VITE_BACKEND_PRODUCTION_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -52,7 +52,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.STAGING_API_URL }}
+          VITE_BACKEND_API_URL: ${{ secrets.VITE_BACKEND_STAGING_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
@@ -78,7 +78,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+          VITE_BACKEND_API_URL: ${{ secrets.VITE_BACKEND_DEVELOPMENT_API_URL }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
