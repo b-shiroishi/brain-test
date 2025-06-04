@@ -28,17 +28,3 @@ resource "google_storage_bucket" "main" {
     managed_by  = "terraform"
   }
 }
-
-# アプリケーション用のサブディレクトリ
-resource "google_storage_bucket_object" "app_folders" {
-  for_each = toset([
-    "uploads/",
-    "backups/",
-    "logs/",
-    "temp/"
-  ])
-  
-  name   = each.value
-  bucket = google_storage_bucket.main.name
-  content = " "
-}
