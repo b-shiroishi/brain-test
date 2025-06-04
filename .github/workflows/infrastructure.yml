@@ -1,18 +1,27 @@
-name: Infrastructure CI/CD
+name: Terraform CI/CD
 
 on:
-  push:
-    paths:
-      - 'infrastructure/**'
-    branches:
-      - dev 
-  
+  # PRが作成・更新された時（プランチェック用）
   pull_request:
     paths:
       - 'infrastructure/**'
     branches:
       - main 
       - stg  
+      - dev
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  # PRがマージされた時（デプロイ用）
+  pull_request:
+    paths:
+      - 'infrastructure/**'
+    branches:
+      - main 
+      - stg  
+      - dev
     types:
       - closed
 
@@ -22,153 +31,9 @@ env:
   TF_VERSION: "1.6.0"
 
 jobs:
-  deploy-prod:
-    if: github.event.pull_request.merged == true && github.base_ref == 'main'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./infrastructure/environments/prod
-    
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=production" \
-            -var="region=$REGION" \
-            -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-  deploy-stg:
-    if: github.event.pull_request.merged == true && github.base_ref == 'stg'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./infrastructure/environments/stg
-    
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=staging" \
-            -var="region=$REGION" \
-            -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-  deploy-dev:
-    if: github.event.pull_request.merged == true && github.base_ref == 'dev'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./infrastructure/environments/dev
-    
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=development" \
-            -var="region=$REGION" \
-            -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-  # Pull Requestでのプランチェック用ジョブ
+  # PRでのプランチェック（マージ前）
   terraform-plan-check:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -222,8 +87,7 @@ jobs:
             -var="project_id=$PROJECT_ID" \
             -var="environment=$ENV_FULL" \
             -var="region=$REGION" \
-            -no-color \
-            -out=tfplan
+            -no-color
 
       - name: Comment PR
         uses: actions/github-script@v7
@@ -248,3 +112,118 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+
+  # 実際のデプロイ（マージ後）
+  terraform-prod:
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infrastructure/environments/prod
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="environment=production" \
+            -var="region=$REGION"
+
+  terraform-stg:
+    if: github.event.pull_request.merged == true && github.base_ref == 'stg'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infrastructure/environments/stg
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="environment=staging" \
+            -var="region=$REGION"
+
+  terraform-dev:
+    if: github.event.pull_request.merged == true && github.base_ref == 'dev'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infrastructure/environments/dev
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="environment=development" \
+            -var="region=$REGION"
