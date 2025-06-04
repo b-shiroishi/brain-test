@@ -62,11 +62,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=dev" \
-            -var="region=$REGION" \
-            -no-color
+          terraform plan 
 
       - name: Comment PR
         uses: actions/github-script@v7
@@ -133,11 +129,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=staging" \
-            -var="region=$REGION" \
-            -no-color
+          terraform plan 
 
       - name: Comment PR
         uses: actions/github-script@v7
@@ -204,11 +196,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=production" \
-            -var="region=$REGION" \
-            -no-color
+          terraform plan 
 
       - name: Comment PR
         uses: actions/github-script@v7
@@ -267,10 +255,7 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=production" \
-            -var="region=$REGION"
+          terraform apply -auto-approve
 
   terraform-apply-stg:
     if: github.event.pull_request.merged == true && github.base_ref == 'stg'
@@ -305,10 +290,7 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=staging" \
-            -var="region=$REGION"
+          terraform apply -auto-approve 
 
   terraform-apply-dev:
     if: github.event.pull_request.merged == true && github.base_ref == 'dev'
@@ -343,7 +325,4 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve \
-            -var="project_id=$PROJECT_ID" \
-            -var="environment=development" \
-            -var="region=$REGION"
+          terraform apply -auto-approve
