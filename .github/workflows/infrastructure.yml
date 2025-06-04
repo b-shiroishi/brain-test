@@ -1,7 +1,6 @@
 name: Terraform CI/CD
 
 on:
-  # PRが作成・更新された時（プランチェック用）
   pull_request:
     paths:
       - 'infrastructure/**'
@@ -10,20 +9,10 @@ on:
       - stg  
       - dev
     types:
-      - opened
-      - synchronize
-      - reopened
-
-  # PRがマージされた時（デプロイ用）
-  pull_request:
-    paths:
-      - 'infrastructure/**'
-    branches:
-      - main 
-      - stg  
-      - dev
-    types:
-      - closed
+      - opened      # PRが作成された時
+      - synchronize # PRが更新された時
+      - reopened    # PRが再オープンされた時
+      - closed      # PRがクローズされた時
 
 env:
   PROJECT_ID: branubrain-fs
@@ -33,7 +22,7 @@ env:
 jobs:
   # PRでのプランチェック（マージ前）
   terraform-plan-check:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -91,7 +80,6 @@ jobs:
 
       - name: Comment PR
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
         with:
           script: |
             const output = `#### Terraform Plan for ${{ matrix.environment }} 📖
