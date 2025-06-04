@@ -64,7 +64,7 @@ jobs:
         run: |
           terraform plan \
             -var="project_id=$PROJECT_ID" \
-            -var="environment=development" \
+            -var="environment=dev" \
             -var="region=$REGION" \
             -no-color
 
