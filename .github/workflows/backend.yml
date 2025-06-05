@@ -43,19 +43,19 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/prod/backend:$GITHUB_SHA
+          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/web/prod:$GITHUB_SHA
           
           docker build -t $IMAGE_TAG .
           
           docker push $IMAGE_TAG
           
-          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/prod/backend:latest
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/prod/backend:latest
+          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/web/prod:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/web/prod:latest
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy branubrain-fs-prod \
-            --image $REGION-docker.pkg.dev/$PROJECT_ID/prod/backend:$GITHUB_SHA \
+          gcloud run deploy web-prod \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/web/prod:$GITHUB_SHA \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \
@@ -96,19 +96,19 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/dev/backend:$GITHUB_SHA
+          IMAGE_TAG=$REGION-docker.pkg.dev/$PROJECT_ID/web/dev:$GITHUB_SHA
           
           docker build -t $IMAGE_TAG .
           
           docker push $IMAGE_TAG
           
-          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/dev/backend:latest
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/dev/backend:latest
+          docker tag $IMAGE_TAG $REGION-docker.pkg.dev/$PROJECT_ID/web/dev:latest
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/web/dev:latest
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy branubrain-fs-dev \
-            --image $REGION-docker.pkg.dev/$PROJECT_ID/dev/backend:$GITHUB_SHA \
+          gcloud run deploy web-dev \
+            --image $REGION-docker.pkg.dev/$PROJECT_ID/web/dev:$GITHUB_SHA \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \

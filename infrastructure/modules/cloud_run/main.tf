@@ -2,7 +2,6 @@ locals {
   enabled_apis = [
     "run.googleapis.com",                   
     "containerregistry.googleapis.com",     
-    "artifactregistry.googleapis.com",   
   ]
   
   project_id = "branubrain-fs"
@@ -14,7 +13,6 @@ locals {
   memory_limit = "1Gi"
 }
 
-# API有効化
 resource "google_project_service" "cloud_run_apis" {
   for_each = toset(local.enabled_apis)
   
@@ -22,15 +20,6 @@ resource "google_project_service" "cloud_run_apis" {
   
   disable_dependent_services = false
   disable_on_destroy         = false
-}
-
-resource "google_artifact_registry_repository" "main" {
-  location      = local.region
-  repository_id = var.cloud_run_name
-  description   = "Docker repository for ${var.cloud_run_name}"
-  format        = "DOCKER"
-
-  depends_on = [google_project_service.cloud_run_apis]
 }
 
 # Cloud Run サービス

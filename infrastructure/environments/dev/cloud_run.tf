@@ -1,7 +1,7 @@
 module "backend_cloud_run" {
   source = "../../modules/cloud_run"
 
-  cloud_run_name = "backend-dev"
+  cloud_run_name = "web-dev"
   cloud_run_image_url = "asia-northeast1-docker.pkg.dev/branubrain-fs/dev/backend"
 }
 
