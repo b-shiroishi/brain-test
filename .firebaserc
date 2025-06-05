@@ -9,10 +9,7 @@
           "branubrain-fs-prod"
         ],
         "dev": [
-          "branubrain-fs-dev"
-        ],
-        "stg": [
-          "branubrain-fs-stg"
+          "branubrain-fs-dev-87a12ee7"
         ]
       }
     }

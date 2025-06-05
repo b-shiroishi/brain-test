@@ -1,6 +1,9 @@
-# 既存プロジェクトを参照
+locals {
+  project_id = "branubrain-fs"
+}
+
 data "google_project" "main" {
-  project_id = var.project_id
+  project_id = local.project_id
 }
 
 # Firebase API有効化
@@ -23,9 +26,12 @@ resource "google_firebase_project" "main" {
   depends_on = [google_project_service.firebase_apis]
 }
 
-# Hostingサイト作成
+resource "random_id" "site_suffix" {
+  byte_length = 4
+}
+
 resource "google_firebase_hosting_site" "main" {
   provider = google-beta
   project  = google_firebase_project.main.project
-  site_id  = "${var.project_id}-${var.environment}"
+  site_id  = "${local.project_id}-${var.environment}-${random_id.site_suffix.hex}"
 }
