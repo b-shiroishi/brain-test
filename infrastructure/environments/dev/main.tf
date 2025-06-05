@@ -1,3 +1,8 @@
+locals {
+  project_id = "branubrain-fs"
+  region = "asia-northeast1"
+}
+
 terraform {
   required_version = "~> 1.6.0"
 
@@ -15,21 +20,19 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 5.10.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.7.0"
+    }
   }
 }
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project = local.project_id
+  region  = local.region
 }
 
 provider "google-beta" {
-  project = var.project_id
-  region  = var.region
-}
-
-data "google_client_config" "current" {}
-
-data "google_project" "branubrain_fs" {
-  project_id = var.project_id
+  project = local.project_id
+  region  = local.region
 }

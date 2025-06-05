@@ -4,6 +4,14 @@ locals {
     "containerregistry.googleapis.com",     
     "artifactregistry.googleapis.com",   
   ]
+  
+  project_id = "branubrain-fs"
+  region = "asia-northeast1"
+  container_port = "8000"
+  allow_unauthenticated = false
+  max_scale = "10"
+  cpu_limit = "2000m"
+  memory_limit = "1Gi"
 }
 
 # API有効化
@@ -17,60 +25,51 @@ resource "google_project_service" "cloud_run_apis" {
 }
 
 resource "google_artifact_registry_repository" "main" {
-  location      = var.region
-  repository_id = var.cloud_run_service_name
-  description   = "Docker repository for ${var.cloud_run_service_name}"
+  location      = local.region
+  repository_id = var.cloud_run_name
+  description   = "Docker repository for ${var.cloud_run_name}"
   format        = "DOCKER"
 
   depends_on = [google_project_service.cloud_run_apis]
 }
 
-# サービスアカウント作成
-resource "google_service_account" "cloud_run_sa" {
-  account_id   = "${var.cloud_run_service_name}"
-  display_name = "Cloud Run Service Account for ${var.cloud_run_service_name}"
-  description  = "Service account for Cloud Run service ${var.cloud_run_service_name}"
-}
-
 # Cloud Run サービス
 resource "google_cloud_run_service" "main" {
-  name     = var.cloud_run_service_name
-  location = var.region
+  name     = var.cloud_run_name
+  location = local.region
 
   template {
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale" = var.max_scale
+        "autoscaling.knative.dev/maxScale" = local.max_scale
         "run.googleapis.com/execution-environment" = "gen2"
       }
     }
 
     spec {
-      service_account_name = google_service_account.cloud_run_sa.email
+      service_account_name = "branubrain-fs@branubrain-fs.iam.gserviceaccount.com"
       
       containers {
-        image = var.cloud_run_image_url != "" ? var.cloud_run_image_url : "gcr.io/cloudrun/hello"
+        image = "gcr.io/cloudrun/hello"
         
         ports {
-          container_port = var.cloud_run_container_port
-        }
-
-        dynamic "env" {
-          for_each = var.env_vars
-          content {
-            name  = env.key
-            value = env.value
-          }
+          container_port = local.container_port
         }
 
         resources {
           limits = {
-            cpu    = var.cpu_limit
-            memory = var.memory_limit
+            cpu    = local.cpu_limit
+            memory = local.memory_limit
           }
         }
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].spec[0].containers[0].image
+    ]
   }
 
   traffic {
@@ -83,19 +82,10 @@ resource "google_cloud_run_service" "main" {
 
 # IAM設定
 resource "google_cloud_run_service_iam_member" "public_access" {
-  count = var.allow_unauthenticated ? 1 : 0
+  count = local.allow_unauthenticated ? 1 : 0
   
   service  = google_cloud_run_service.main.name
   location = google_cloud_run_service.main.location
   role     = "roles/run.invoker"
   member   = "allUsers"
-}
-
-# サービスアカウントに必要な権限付与
-resource "google_project_iam_member" "cloud_run_sa_permissions" {
-  for_each = toset(var.service_account_roles)
-  
-  project = var.project_id
-  role    = each.value
-  member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
 }

@@ -1,17 +1,17 @@
 name: Frontend CI/CD
 on:
-  push:
+  pull_request:
+    types: [closed]
     paths:
       - 'frontend/**'
     branches:
       - main
       - dev
-      - stg
 
 jobs:
   # 本番環境
   deploy-prod:
-    if: github.ref == 'refs/heads/main'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,39 +39,9 @@ jobs:
           projectId: branubrain-fs
           target: prod
 
-  # ステージング環境
-  deploy-stg:
-    if: github.ref == 'refs/heads/stg'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
-      - run: |
-          rm -rf dist/
-          rm -rf node_modules/.vite/
-          rm -rf node_modules/.cache/
-      - run: npm ci
-      - run: npm run build
-        env:
-          VITE_BACKEND_API_URL: '${{ secrets.VITE_BACKEND_STAGING_API_URL }}'
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_BRANUBRAIN_FS }}'
-          channelId: live
-          projectId: branubrain-fs
-          target: stg
-
   # 開発環境
   deploy-dev:
-    if: github.ref == 'refs/heads/dev'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev'
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -1,6 +1,13 @@
-module "cloud_run" {
+module "backend_cloud_run" {
   source = "../../modules/cloud_run"
 
-  project_id = var.project_id
-  region     = var.region
+  cloud_run_name = "backend-dev"
+  cloud_run_image_url = "asia-northeast1-docker.pkg.dev/branubrain-fs/dev/backend"
+}
+
+module "data_transfer_cloud_run" {
+  source = "../../modules/cloud_run"
+
+  cloud_run_name = "data-transfer-dev"
+  cloud_run_image_url = "asia-northeast1-docker.pkg.dev/branubrain-fs/dev/data-transfer"
 }
