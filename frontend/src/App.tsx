@@ -14,7 +14,7 @@ function App() {
     <>
       <h1>Branubrain dev</h1>
       <p>{message}</p>
-      <button onClick={handleApiCall}>API</button>
+      <button onClick={handleApiCall}>test</button>
     </>
   )
 }
